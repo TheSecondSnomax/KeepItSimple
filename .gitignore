@@ -1,0 +1,11 @@
+# Python folders.
+__pycache__/
+
+# Git folders.
+.git/
+
+# Pycharm folders.
+.idea/
+
+# Local folders.
+local/
