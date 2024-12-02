@@ -1,36 +1,38 @@
 """
 This module contains the classes and functions used for parallelism.
 """
+from multiprocessing import Lock
 from multiprocessing.managers import SharedMemoryManager, SyncManager
 
 
 class ManagerShared:
     """
-    Wrapper around the multiprocessing manager classes to facilitate management of neuron shared memory and locks.
-    The lifetime of the manager must be at least as long as the neurons,
-    otherwise the neurons will try to access deallocated memory.
+    Wrapper around multiprocessing manager classes to facilitate management of shared memory, locks, queues,
+    and processes.
     """
 
-    def __init__(self):
-        """
-        Notes
-        -----
-        pylint "consider-using-with" error disabled:
-            SharedMemoryManager has to remain running after initialisation for the reason mentioned above.
-        """
-        # pylint: disable=consider-using-with
-        self._m_manager = SharedMemoryManager()
-        self._m_manager.start()
+    def __init__(self) -> None:
+        self._manager_memory = SharedMemoryManager()
+        self._manager_memory.start()
 
-        self._l_manager = SyncManager()
-        self._l_manager.start()
-        # pylint: enable=consider-using-with
+        self._manager_locks = SyncManager()
+        self._manager_locks.start()
 
-        self._queue = self._l_manager.Queue()
+        self._queue = self._manager_locks.Queue()
         self._memory = []
-        self._locks = []
         self._processes = []
 
-    def __del__(self):
-        self._m_manager.shutdown()
-        self._l_manager.shutdown()
+    def __del__(self) -> None:
+        self._manager_memory.shutdown()
+        self._manager_locks.shutdown()
+
+    def request_lock(self) -> Lock:
+        """
+        Request a lock which can be shared across processes.
+
+        Returns
+        -------
+        lock: Lock
+            SyncManager lock instance which can be shared across processes.
+        """
+        return self._manager_locks.Lock()
