@@ -4,13 +4,15 @@ This module contains the unit tests and their helper functions for the parallel 
 
 from contextlib import redirect_stderr, redirect_stdout
 from io import StringIO
-from multiprocessing import Lock, Process
+from threading import Lock
+from queue import Empty
+from multiprocessing import Process
 from sys import exit
 from time import sleep, time
 from typing import Callable
 from unittest import TestCase
 
-from src.kiss.parallel import ManagerShared
+from src.kiss.parallel import ManagerShared, Queue
 
 
 def helper_start_testers(processes: int, target: Callable, **kwargs) -> float:
@@ -39,12 +41,12 @@ def helper_tester(target: Callable, **kwargs) -> None:
     stream = StringIO()
     code = 1
 
-    with redirect_stdout(stream), redirect_stderr(stream):
-        try:
-            target(**kwargs)
-            code = 0
-        except Exception as e:
-            print(e)
+    # with redirect_stdout(stream), redirect_stderr(stream):
+    try:
+        target(**kwargs)
+        code = 0
+    except Exception as e:
+        print(e)
 
     exit(code)
 
@@ -57,6 +59,18 @@ def helper_request_lock(lock: Lock) -> None:
         sleep(1)
 
 
+def helper_request_queue(queue: Queue) -> None:
+    """
+    Target function for the "request_queue" method tests.
+    """
+    while True:
+        try:
+            queue.get(block=False)
+            sleep(1)
+        except Empty:
+            exit(0)
+
+
 class TestParallel(TestCase):
     """
     This test case contains the unit tests for the parallel module.
@@ -64,7 +78,7 @@ class TestParallel(TestCase):
 
     def test_request_lock_1(self) -> None:
         """
-        Test if a lock can be requested, and blocks processes until it is released.
+        Test if a lock can be requested, and blocks other processes until it is released.
         """
         manager = ManagerShared()
         lock = manager.request_lock()
@@ -84,3 +98,18 @@ class TestParallel(TestCase):
 
         with self.assertRaises(expected_exception=ChildProcessError):
             helper_start_testers(processes=processes, target=helper_request_lock, lock=lock)
+
+    def test_request_queue_1(self) -> None:
+        """
+        Test if a queue can be requested, and can be used across processes.
+        """
+        manager = ManagerShared()
+        queue = manager.request_queue()
+
+        for i in range(2):
+            queue.add(i)
+
+        processes = 2
+        elapsed = helper_start_testers(processes=processes, target=helper_request_queue, queue=queue)
+
+        self.assertTrue(expr=elapsed < processes)
