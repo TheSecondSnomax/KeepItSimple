@@ -1,10 +1,11 @@
 """
-This module contains the unit tests for the parallel module.
+This module contains the unit tests and their helper functions for the parallel module.
 """
 
 from contextlib import redirect_stderr, redirect_stdout
 from io import StringIO
 from multiprocessing import Lock, Process
+from sys import exit
 from time import sleep, time
 from typing import Callable
 from unittest import TestCase
@@ -12,11 +13,11 @@ from unittest import TestCase
 from src.kiss.parallel import ManagerShared
 
 
-def start_testers(processes: int, target: Callable, **kwargs) -> float:
+def helper_start_testers(processes: int, target: Callable, **kwargs) -> float:
     """
     Start child processes testing a target function.
     """
-    processes = [Process(target=tester, args=(target,), kwargs=kwargs) for _ in range(processes)]
+    processes = [Process(target=helper_tester, args=(target,), kwargs=kwargs) for _ in range(processes)]
     start = time()
 
     for process in processes:
@@ -31,7 +32,7 @@ def start_testers(processes: int, target: Callable, **kwargs) -> float:
     return stop - start
 
 
-def tester(target: Callable, **kwargs) -> None:
+def helper_tester(target: Callable, **kwargs) -> None:
     """
     Wrapper around the child process target function to redirect stdout and stderr.
     """
@@ -48,7 +49,7 @@ def tester(target: Callable, **kwargs) -> None:
     exit(code)
 
 
-def target_request_lock(lock: Lock) -> None:
+def helper_request_lock(lock: Lock) -> None:
     """
     Target function for the "request_lock" method tests.
     """
@@ -57,15 +58,18 @@ def target_request_lock(lock: Lock) -> None:
 
 
 class TestParallel(TestCase):
+    """
+    This test case contains the unit tests for the parallel module.
+    """
 
     def test_request_lock_1(self) -> None:
         """
-        Test if a lock can be requested, and block processes until it is released.
+        Test if a lock can be requested, and blocks processes until it is released.
         """
         manager = ManagerShared()
         lock = manager.request_lock()
         processes = 2
-        elapsed = start_testers(processes=processes, target=target_request_lock, lock=lock)
+        elapsed = helper_start_testers(processes=processes, target=helper_request_lock, lock=lock)
 
         self.assertTrue(expr=elapsed >= processes)
 
@@ -79,4 +83,4 @@ class TestParallel(TestCase):
         del manager
 
         with self.assertRaises(expected_exception=ChildProcessError):
-            start_testers(processes=processes, target=target_request_lock, lock=lock)
+            helper_start_testers(processes=processes, target=helper_request_lock, lock=lock)

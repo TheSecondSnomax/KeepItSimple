@@ -7,7 +7,6 @@ from unittest.mock import patch
 
 from numpy import dtype, ndarray, single
 from pytest import mark
-
 from snoscience._parallel import (
     ManagerShared,
     get_worker_error,

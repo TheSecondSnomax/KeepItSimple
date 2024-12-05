@@ -2,7 +2,6 @@ from time import time
 
 from numpy import load
 from numpy import max as numpy_max
-
 from snoscience.metrics import calculate_accuracy, calculate_mse
 from snoscience.networks import NeuralNetwork
 

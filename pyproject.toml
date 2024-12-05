@@ -29,7 +29,6 @@ mkdocstrings = "^0.25.1"
 mkdocstrings-python = "^1.10.3"
 
 [tool.mypy]
-packages = ["src"]
 cache_dir = "./local/mypy"
 ignore_missing_imports = true
 
@@ -46,7 +45,7 @@ disable = [
 [tool.coverage.run]
 source = ["src"]
 data_file = "./local/coverage/data"
-concurrency = ["multiprocessing", "thread"]
+concurrency = ["multiprocessing"]
 disable_warnings = ["no-data-collected"]
 
 [tool.coverage.report]

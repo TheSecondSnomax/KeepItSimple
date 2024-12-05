@@ -1,7 +1,6 @@
 from typing import Optional
 
 from numpy import array, ones
-
 from snoscience._layers import BasicLayer, Layer
 from snoscience._neurons import Neuron, NeuronShared
 

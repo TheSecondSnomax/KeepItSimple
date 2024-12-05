@@ -20,8 +20,6 @@ class ManagerShared:
         self._manager_locks.start()
 
         self._queue = self._manager_locks.Queue()
-        self._memory = []
-        self._processes = []
 
     def __del__(self) -> None:
         self._manager_memory.shutdown()
