@@ -8,9 +8,15 @@ from unittest.mock import patch
 from numpy import dtype, ndarray, single
 from pytest import mark
 
-from snoscience._parallel import (ManagerShared, get_worker_error,
-                                  get_worker_status, guard, set_worker_error,
-                                  set_worker_status, worker)
+from snoscience._parallel import (
+    ManagerShared,
+    get_worker_error,
+    get_worker_status,
+    guard,
+    set_worker_error,
+    set_worker_status,
+    worker,
+)
 
 
 def helper_lock(lock: Lock, seconds: int) -> None:

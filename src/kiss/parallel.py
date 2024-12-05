@@ -1,6 +1,7 @@
 """
 This module contains the classes and functions used for parallelism.
 """
+
 from multiprocessing import Lock
 from multiprocessing.managers import SharedMemoryManager, SyncManager
 
