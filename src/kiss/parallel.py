@@ -135,27 +135,35 @@ class ManagerShared:
 
     def request_lock(self) -> Lock:
         """
-        Request a lock which can be shared across processes.
+        Request a lock which can be shared between processes.
 
         Returns
         -------
         lock: Lock
-            SyncManager Lock instance which can be shared across processes.
+            SyncManager Lock instance which can be shared between processes.
         """
         return self._manager_locks.Lock()
 
     def request_queue(self) -> Queue:
         """
-        Request a queue which can be shared across processes.
+        Request a queue which can be shared between processes.
 
         Returns
         -------
         queue: Queue
-            Queue instance which can be shared across processes.
+            Queue instance which can be shared between processes.
         """
         return Queue(queue=self._manager_queues, lock=self._manager_locks)
 
-    def request_memory(self, type_: Type[Memory.SUPPORTED]):
+    def request_memory(self, type_: Type[Memory.SUPPORTED]) -> Memory:
+        """
+        Request memory which can be shared between processes.
+
+        Returns
+        -------
+        memory: Memory
+            Memory instance which can be shared between processes.
+        """
         return Memory(memory=self._manager_memory, lock=self._manager_locks, type_=type_)
 
 
