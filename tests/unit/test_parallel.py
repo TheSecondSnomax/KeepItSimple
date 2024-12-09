@@ -4,10 +4,10 @@ This module contains the unit tests and their helper functions for the parallel 
 
 from contextlib import redirect_stderr, redirect_stdout
 from io import StringIO
-from threading import Lock
-from queue import Empty
 from multiprocessing import Process
+from multiprocessing.managers import SyncManager
 from sys import exit
+from threading import Lock
 from time import sleep, time
 from typing import Callable
 from unittest import TestCase
@@ -41,12 +41,12 @@ def helper_tester(target: Callable, **kwargs) -> None:
     stream = StringIO()
     code = 1
 
-    # with redirect_stdout(stream), redirect_stderr(stream):
-    try:
-        target(**kwargs)
-        code = 0
-    except Exception as e:
-        print(e)
+    with redirect_stdout(stream), redirect_stderr(stream):
+        try:
+            target(**kwargs)
+            code = 0
+        except Exception as e:
+            print(e)
 
     exit(code)
 
@@ -65,9 +65,9 @@ def helper_request_queue(queue: Queue) -> None:
     """
     while True:
         try:
-            queue.get(block=False)
+            queue.get()
             sleep(1)
-        except Empty:
+        except ValueError:
             exit(0)
 
 
@@ -75,6 +75,40 @@ class TestParallel(TestCase):
     """
     This test case contains the unit tests for the parallel module.
     """
+
+    def test_queue_put(self) -> None:
+        """
+        Test if an item can be put in the queue.
+        """
+        with SyncManager() as manager:
+            queue = Queue(queue=manager, lock=manager)
+            queue.put(1, 2, a=3, b=4)
+            args, kwargs = queue._queue.get()
+
+        self.assertEqual(first=(1, 2), second=args)
+        self.assertEqual(first={"a": 3, "b": 4}, second=kwargs)
+
+    def test_queue_get(self) -> None:
+        """
+        Test if an item can be retrieved from the queue.
+        """
+        with SyncManager() as manager:
+            queue = Queue(queue=manager, lock=manager)
+            queue._queue.put(((1, 2), {"a": 3, "b": 4}))
+            args, kwargs = queue.get()
+
+        self.assertEqual(first=(1, 2), second=args)
+        self.assertEqual(first={"a": 3, "b": 4}, second=kwargs)
+
+    def test_queue_empty(self) -> None:
+        """
+        Test if an error is raised when the queue is empty.
+        """
+        with SyncManager() as manager:
+            queue = Queue(queue=manager, lock=manager)
+
+            with self.assertRaises(expected_exception=ValueError):
+                queue.get()
 
     def test_request_lock_1(self) -> None:
         """
@@ -107,9 +141,25 @@ class TestParallel(TestCase):
         queue = manager.request_queue()
 
         for i in range(2):
-            queue.add(i)
+            queue.put(i)
 
         processes = 2
         elapsed = helper_start_testers(processes=processes, target=helper_request_queue, queue=queue)
 
         self.assertTrue(expr=elapsed < processes)
+
+    def test_request_queue_2(self) -> None:
+        """
+        Test if a queue is garbage collected when the manager is destroyed.
+        """
+        manager = ManagerShared()
+        queue = manager.request_queue()
+
+        for i in range(2):
+            queue.put(i)
+
+        processes = 1
+        del manager
+
+        with self.assertRaises(expected_exception=ChildProcessError):
+            helper_start_testers(processes=processes, target=helper_request_queue, queue=queue)
