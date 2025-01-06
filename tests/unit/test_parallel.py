@@ -5,14 +5,14 @@ This module contains the unit tests and their helper functions for the parallel 
 from contextlib import redirect_stderr, redirect_stdout
 from io import StringIO
 from multiprocessing import Process
-from multiprocessing.managers import SyncManager
+from multiprocessing.managers import SharedMemoryManager, SyncManager
 from sys import exit
 from threading import Lock
 from time import sleep, time
 from typing import Callable
 from unittest import TestCase
 
-from src.kiss.parallel import ManagerShared, Queue
+from src.kiss.parallel import ManagerShared, Memory, Queue
 
 
 def helper_start_testers(processes: int, target: Callable, **kwargs) -> float:
@@ -109,6 +109,36 @@ class TestParallel(TestCase):
 
             with self.assertRaises(expected_exception=ValueError):
                 queue.get()
+
+    def helper_test_memory(self, item: Memory.SUPPORTED) -> None:
+        """
+        Helper method to test if an item can be written to and read from memory.
+        """
+        with SharedMemoryManager() as mem_manager:
+            with SyncManager() as lock_manager:
+                memory = Memory(memory=mem_manager, lock=lock_manager, item=type(item))
+                memory.write(item=item)
+                calc = memory.read()
+
+        self.assertEqual(first=item, second=calc)
+
+    def test_memory_str(self) -> None:
+        """
+        Test if a string can be written to and read from memory.
+        """
+        self.helper_test_memory(item="Hello World!")
+
+    def test_memory_int(self) -> None:
+        """
+        Test if an integer can be written to and read from memory.
+        """
+        self.helper_test_memory(item=10)
+
+    def test_memory_float(self) -> None:
+        """
+        Test if a float can be written to and read from memory.
+        """
+        self.helper_test_memory(item=1.234)
 
     def test_request_lock_1(self) -> None:
         """

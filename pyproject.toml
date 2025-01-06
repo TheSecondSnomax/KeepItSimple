@@ -23,6 +23,7 @@ mypy = "^1.10.0"
 coverage = "^7.5.3"
 isort = "^5.13.2"
 black = "^24.8.0"
+docformatter = "^1.7.5"
 mkdocs = "^1.6.0"
 mkdocs-material = "^9.5.26"
 mkdocstrings = "^0.25.1"
@@ -54,6 +55,15 @@ fail_under = 100
 
 [tool.black]
 line-length = 120
+
+[tool.docformatter]
+line-length = 120
+wrap-summaries = 120
+wrap-descriptions = 120
+make-summary-multi-line = true
+pre-summary-newline = true
+in-place = true
+recursive = true
 
 [build-system]
 requires = ["poetry-core"]

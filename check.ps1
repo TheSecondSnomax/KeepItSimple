@@ -12,6 +12,9 @@ Test-Command
 black .
 Test-Command
 
+docformatter src
+Test-Command
+
 mypy src
 Test-Command
 
